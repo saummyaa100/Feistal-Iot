@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.5)
+project(feistel_demo C)
+add_library(feistel STATIC feistel.c)
+target_include_directories(feistel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(feistel_demo feistel.c)
+target_compile_definitions(feistel_demo PRIVATE FEISTEL_DEMO_MAIN)
+target_link_libraries(feistel_demo feistel)
