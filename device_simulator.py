@@ -47,12 +47,29 @@ def load_key(hexstr, default):
         sys.exit(2)
 
 
+def find_repo_root(start_path=None):
+    """Find project root by looking for the `feistel_cipher` folder.
+
+    This allows running the script from a subdirectory (for example
+    `c_src`) while resolving relative paths against the project root.
+    """
+    p = Path(start_path or Path.cwd()).resolve()
+    for parent in [p] + list(p.parents):
+        if (parent / 'feistel_cipher').exists():
+            return parent
+    return Path.cwd()
+
+
 def main():
     args = parse_args()
+    # Resolve infile/out relative to repository root when paths are relative.
+    repo_root = find_repo_root()
     if args.infile:
         path = Path(args.infile)
+        if not path.is_absolute():
+            path = (repo_root / path).resolve()
         if not path.exists():
-            print("Input file not found:", args.infile, file=sys.stderr)
+            print(f"Input file not found: {path}", file=sys.stderr)
             sys.exit(1)
         with path.open("rb") as f:
             plaintext = f.read()
@@ -66,6 +83,9 @@ def main():
 
     payload = encrypt_then_mac(plaintext, enc_key, mac_key, rounds=args.rounds, block_size=args.block_size)
     out_path = Path(args.out)
+    if not out_path.is_absolute():
+        out_path = (repo_root / out_path).resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("wb") as f:
         f.write(payload)
 
